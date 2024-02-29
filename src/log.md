@@ -16,5 +16,31 @@ boxes have a beatTime
 boxes meshes de/spawn on time threshold relative to beatTime
 mesh refs...
 
-- [ ] Add shot value ui
-- [ ] Add shot sfx
+Beat game
+
+- [x] Add shot value ui
+- [ ] Fix position animation on grade UI components
+- [ ] Add shot sfx (three different qualities)
+- [x] Add metronome sfx
+- [ ] Create a slightly longer tutorial (increase beat freq + streak req)
+- [x] Limit key to space bar
+- [ ] Add instructions for spacebar
+- [ ] Add tutorial complete screen
+- [ ] System to read audio tracks for levels... midi? json?
+- [ ] Add a relapse period after shooting
+
+Tone match game
+
+- [ ]
+
+Horde game
+
+- [ ]
+
+Misc
+
+- [ ] Make the canvas scale to fit the screen
+- [ ] Get people to go fullscreen
+- [ ] Title Screen
+
+How to coordinate audio as game scales 🤔

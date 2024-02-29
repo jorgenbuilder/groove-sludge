@@ -2,11 +2,10 @@ import { Canvas } from '@react-three/fiber'
 import { Leva, useControls } from 'leva'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { ACESFilmicToneMapping, sRGBEncoding } from 'three'
-import { Scene } from './BeatGame'
 import './styles/main.css'
 import { OrthographicCamera } from '@react-three/drei'
 import { Perf } from 'r3f-perf'
+import BeatTutorialLevel from './components/BeatTutorialLevel'
 
 function Main() {
   const { performance } = useControls(
@@ -34,24 +33,15 @@ function Main() {
           },
         }}
       />
-      <Canvas
-        eventSource={document.getElementById('main')!}
-        dpr={[1, 2]}
-        gl={{
-          antialias: true,
-          toneMapping: ACESFilmicToneMapping,
-          outputEncoding: sRGBEncoding,
-        }}
-        shadows
-      >
+      <Canvas>
         {performance && <Perf position='top-left' />}
         <color attach='background' args={['#021912']} />
         <OrthographicCamera
           makeDefault
           args={[-1, 1, 1, -1, 0.1, 2000]}
-          position={[0, 0, 1]}
+          position={[0, 0, 100]}
         />
-        <Scene position={[0, 0, 0]} />
+        <BeatTutorialLevel />
       </Canvas>
     </div>
   )
