@@ -28,7 +28,7 @@ body {
 #root {
   width: 100%;
   aspect-ratio: 16/9;
-  max-width: 1024px;
+  /* max-width: 1024px; */
 }
 
 .main {

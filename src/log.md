@@ -31,16 +31,40 @@ Beat game
 
 Tone match game
 
-- [ ]
+- [x] Create UI
+- [x] Create synth track in Tone.js
+- [x] Play tone on beat, based on tone cursor
+- [ ] Add targets
+- [ ] Track state of the match game (grade)
 
 Horde game
 
-- [ ]
+- [ ] Spawn enemies
+- [ ] Make enemies move toward player
+- [ ] Make player shoot
+- [ ] Implement hit detection
+- [ ] Give player and enemies health
+- [ ] Implement death handlers for entities
+- [ ] Game over screen
+
+Music system
+
+- [ ] Centralize sequence information into the game store
+- [ ] Make everything all work together
+- [ ] Add audio to beat game
+- [ ] Mechanism to start audio on first user interaction
 
 Misc
 
+- [ ] Add instructions to disable smooth scrolling
 - [ ] Make the canvas scale to fit the screen
 - [ ] Get people to go fullscreen
 - [ ] Title Screen
+- [ ] Level selection screen (only after doing tutorial)
+
+Scoring
+
+- [ ] Add game win screen
+- [ ] Add scoring system accounting for beat, tone, and horde mechanics
 
 How to coordinate audio as game scales 🤔

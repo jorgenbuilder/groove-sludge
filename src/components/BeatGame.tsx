@@ -40,7 +40,16 @@ export function BeatGame({ ...props }: Props) {
 
   React.useEffect(() => {
     window.addEventListener('keydown', shoot)
-    return () => window.removeEventListener('keydown', shoot)
+
+    // Mock up some... beats
+    const t = setInterval(() => {
+      useGameStore.getState().addBeat(Date.now() + (60_000 / bpm) * 2)
+    }, (60_000 / bpm) * 4)
+
+    return () => {
+      window.removeEventListener('keydown', shoot)
+      clearInterval(t)
+    }
   }, [shoot])
 
   const cursorPos = [-width / 2 + height * 0.25, 0, 0] as const

@@ -1,3 +1,4 @@
+import * as THREE from 'three'
 import { create } from 'zustand'
 
 const bpm = 150
@@ -8,7 +9,16 @@ interface GameStore {
   addBeat: (beat: number) => void
   shots: [number, 0 | 1 | 2][]
   addShot: (shot: [number, 0 | 1 | 2]) => void
+  toneGranularity: number
+  toneCursor: number
+  toneCursorNormalized: number
+  moveCursorUp: () => void
+  moveCursorDown: () => void
+  currTone?: string
+  setCurrTone: (tone: string) => void
 }
+
+const toneGranularity = 3
 
 export const useGameStore = create<GameStore>()((set, get) => ({
   bpm,
@@ -20,9 +30,31 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   addShot: (shot) => {
     set((prev) => ({ shots: [...prev.shots, shot] }))
   },
+  toneGranularity,
+  toneCursor: Math.ceil(toneGranularity / 2),
+  toneCursorNormalized:
+    0.5 - (Math.ceil(toneGranularity / 2) - 1) / (toneGranularity - 1),
+  moveCursorUp() {
+    const { toneCursor, toneGranularity } = get()
+    const update = THREE.MathUtils.clamp(toneCursor + 1, 1, toneGranularity)
+    const normalized = 0.5 - (update - 1) / (toneGranularity - 1)
+    set((prev) => ({
+      ...prev,
+      toneCursor: update,
+      toneCursorNormalized: normalized,
+    }))
+  },
+  moveCursorDown() {
+    const { toneCursor, toneGranularity } = get()
+    const update = THREE.MathUtils.clamp(toneCursor - 1, 1, toneGranularity)
+    const normalized = 0.5 - (update - 1) / (toneGranularity - 1)
+    set((prev) => ({
+      ...prev,
+      toneCursor: update,
+      toneCursorNormalized: normalized,
+    }))
+  },
+  setCurrTone(currTone) {
+    set({ currTone })
+  },
 }))
-
-// Mock up some... beats
-setInterval(() => {
-  useGameStore.getState().addBeat(Date.now() + (60_000 / bpm) * 2)
-}, (60_000 / bpm) * 4)

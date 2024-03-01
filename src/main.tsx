@@ -6,6 +6,8 @@ import './styles/main.css'
 import { OrthographicCamera } from '@react-three/drei'
 import { Perf } from 'r3f-perf'
 import BeatTutorialLevel from './components/BeatTutorialLevel'
+import ToneGame from './components/ToneGame'
+import FullGame from './components/FullGame'
 
 function Main() {
   const { performance } = useControls(
@@ -41,7 +43,7 @@ function Main() {
           args={[-1, 1, 1, -1, 0.1, 2000]}
           position={[0, 0, 100]}
         />
-        <BeatTutorialLevel />
+        <ToneGame />
       </Canvas>
     </div>
   )
