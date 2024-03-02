@@ -34,7 +34,7 @@ Tone match game
 - [x] Create UI
 - [x] Create synth track in Tone.js
 - [x] Play tone on beat, based on tone cursor
-- [ ] Add targets
+- [x] Add targets
 - [ ] Track state of the match game (grade)
 
 Horde game
@@ -53,6 +53,7 @@ Music system
 - [ ] Make everything all work together
 - [ ] Add audio to beat game
 - [ ] Mechanism to start audio on first user interaction
+- [ ] Create a midi file in fl studio, export it, pipe it into the beat game and the tone game
 
 Misc
 
@@ -61,6 +62,9 @@ Misc
 - [ ] Get people to go fullscreen
 - [ ] Title Screen
 - [ ] Level selection screen (only after doing tutorial)
+- [ ] Sequence out Someday (extend each section)
+- [ ] Create instrument voices
+- [ ] Create a 4 beat count in UI
 
 Scoring
 

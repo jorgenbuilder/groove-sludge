@@ -5,6 +5,7 @@ import React from 'react'
 const tones = ['C3', 'E3', 'G3']
 
 const synthA = new Tone.FMSynth().toDestination()
+synthA.volume.value = -32
 
 export default function AudioPlayer() {
   const { bpm } = useGameStore(({ toneCursor, bpm }) => ({ toneCursor, bpm }))

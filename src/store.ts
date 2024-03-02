@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { create } from 'zustand'
+import { normalizeTone } from './util'
 
 const bpm = 150
 
@@ -32,12 +33,11 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   },
   toneGranularity,
   toneCursor: Math.ceil(toneGranularity / 2),
-  toneCursorNormalized:
-    0.5 - (Math.ceil(toneGranularity / 2) - 1) / (toneGranularity - 1),
+  toneCursorNormalized: normalizeTone(Math.ceil(toneGranularity / 2), toneGranularity),
   moveCursorUp() {
     const { toneCursor, toneGranularity } = get()
     const update = THREE.MathUtils.clamp(toneCursor + 1, 1, toneGranularity)
-    const normalized = 0.5 - (update - 1) / (toneGranularity - 1)
+    const normalized = normalizeTone(update, toneGranularity)
     set((prev) => ({
       ...prev,
       toneCursor: update,
@@ -47,7 +47,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   moveCursorDown() {
     const { toneCursor, toneGranularity } = get()
     const update = THREE.MathUtils.clamp(toneCursor - 1, 1, toneGranularity)
-    const normalized = 0.5 - (update - 1) / (toneGranularity - 1)
+    const normalized = normalizeTone(update, toneGranularity)
     set((prev) => ({
       ...prev,
       toneCursor: update,

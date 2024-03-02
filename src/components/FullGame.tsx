@@ -1,7 +1,7 @@
 import { useThree } from '@react-three/fiber'
 import { useDimensions } from '../util'
 import { BeatGame } from './BeatGame'
-import ToneGame from './ToneGame.1'
+import ToneGame from './ToneGame'
 
 export default function FullGame() {
   const {

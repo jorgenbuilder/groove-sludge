@@ -8,6 +8,10 @@ import { isInThreshold, processTexture } from '../util'
 
 interface Props extends GroupProps {}
 
+setInterval(() => {
+  useGameStore.getState().addBeat(Date.now() + (60_000 / useGameStore.getState().bpm) * 2)
+}, (60_000 / useGameStore.getState().bpm) * 4)
+
 export function BeatGame({ ...props }: Props) {
   const {
     size: { width, height },
@@ -41,14 +45,8 @@ export function BeatGame({ ...props }: Props) {
   React.useEffect(() => {
     window.addEventListener('keydown', shoot)
 
-    // Mock up some... beats
-    const t = setInterval(() => {
-      useGameStore.getState().addBeat(Date.now() + (60_000 / bpm) * 2)
-    }, (60_000 / bpm) * 4)
-
     return () => {
       window.removeEventListener('keydown', shoot)
-      clearInterval(t)
     }
   }, [shoot])
 
@@ -78,7 +76,7 @@ export function BeatGame({ ...props }: Props) {
         {/* Beat row */}
         <mesh position={[0, 0, 0]}>
           <planeGeometry args={[width, height * 0.25]} />
-          <meshBasicMaterial map={texBeatRow} />
+          <meshBasicMaterial map={texBeatRow} toneMapped={false} />
         </mesh>
         {/* Beat squares */}
         {visibleBeats.map((time) => (
