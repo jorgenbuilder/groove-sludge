@@ -49,7 +49,7 @@ function Main() {
             args={[-1, 1, 1, -1, 0.1, 2000]}
             position={[0, 0, 100]}
           />
-          <BeatGame />
+          <FullGame />
         </Canvas>
       )}
     </div>

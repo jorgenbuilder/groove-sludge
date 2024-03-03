@@ -48,7 +48,6 @@ export default function ToneGame({ ...props }: Props) {
     const synth = new Tone.Synth().toDestination()
     const part = new Tone.Part((time, value) => {
       Tone.Draw.schedule(function () {
-        // console.log(part.progress * Tone.Time(part.loopEnd).toSeconds())
         const i = beats.indexOf(value)
         setDrawBeats(beats.slice(i, i + 7).map((beat, j) => ({ ...beat, index: i + j })))
       }, time)
@@ -72,11 +71,18 @@ export default function ToneGame({ ...props }: Props) {
       if (ev.deltaY < 0) moveCursorDown()
     }
 
+    function bind2(ev: KeyboardEvent) {
+      if (ev.key === 'ArrowUp') moveCursorDown()
+      if (ev.key === 'ArrowDown') moveCursorUp()
+    }
+
     part.start(0)
 
+    window.addEventListener('keydown', bind2)
     window.addEventListener('wheel', bind)
     return () => {
       window.removeEventListener('wheel', bind)
+      window.removeEventListener('keydown', bind2)
       part.stop().dispose()
       Tone.Transport.stop()
     }
@@ -119,7 +125,6 @@ export default function ToneGame({ ...props }: Props) {
       if (beatIndex === 5 || beatIndex === 10) {
         if (elapsedTime - lastLog.current > 0.5) {
           lastLog.current = elapsedTime
-          console.log(deltaNormalized)
         }
       }
 
