@@ -8,6 +8,8 @@ import { Perf } from 'r3f-perf'
 import BeatTutorialLevel from './components/BeatTutorialLevel'
 import ToneGame from './components/ToneGame'
 import FullGame from './components/FullGame'
+import TitleScreen from './components/TitleScreen'
+import { BeatGame } from './components/BeatGame'
 
 function Main() {
   const { performance } = useControls(
@@ -19,6 +21,8 @@ function Main() {
       collapsed: true,
     }
   )
+
+  const [started, setStarted] = React.useState(false)
 
   return (
     <div className='main'>
@@ -35,17 +39,19 @@ function Main() {
           },
         }}
       />
-      <Canvas>
-        {performance && <Perf position='top-left' />}
-        <color attach='background' args={['#021912']} />
-        <OrthographicCamera
-          makeDefault
-          args={[-1, 1, 1, -1, 0.1, 2000]}
-          position={[0, 0, 100]}
-        />
-        <FullGame />
-        <ambientLight />
-      </Canvas>
+      {!started && <TitleScreen handlers={{ start: () => setStarted(true) }} />}
+      {started && (
+        <Canvas>
+          {performance && <Perf position='top-left' />}
+          <color attach='background' args={['#021912']} />
+          <OrthographicCamera
+            makeDefault
+            args={[-1, 1, 1, -1, 0.1, 2000]}
+            position={[0, 0, 100]}
+          />
+          <BeatGame />
+        </Canvas>
+      )}
     </div>
   )
 }

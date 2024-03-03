@@ -46,16 +46,22 @@ export default function ToneGame({ ...props }: Props) {
 
   const part = React.useMemo(() => {
     const synth = new Tone.Synth().toDestination()
-    return new Tone.Part((time, value) => {
+    const part = new Tone.Part((time, value) => {
       Tone.Draw.schedule(function () {
         // console.log(part.progress * Tone.Time(part.loopEnd).toSeconds())
         const i = beats.indexOf(value)
-        setDrawBeats(beats.slice(i, i + 6).map((beat, j) => ({ ...beat, index: i + j })))
+        setDrawBeats(beats.slice(i, i + 7).map((beat, j) => ({ ...beat, index: i + j })))
       }, time)
 
       // the value is an object which contains both the note and the velocity
       synth.triggerAttackRelease(value.note, '8n', time)
     }, beats)
+
+    part.loop = true
+    part.loopStart = 0
+    part.loopEnd = '3:0:0'
+
+    return part
   }, [beats])
 
   React.useEffect(() => {
@@ -67,10 +73,6 @@ export default function ToneGame({ ...props }: Props) {
     }
 
     part.start(0)
-
-    part.loop = true
-    part.loopStart = 0
-    part.loopEnd = '3:0:0'
 
     window.addEventListener('wheel', bind)
     return () => {
