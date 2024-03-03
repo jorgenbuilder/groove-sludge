@@ -18,29 +18,53 @@ const beats = [
   { time: '7:0:0', note: 'C1' },
 ]
 
-const metronomeBeats = [
-  { time: '0:0:0', note: 'C2' },
-  { time: '0:1:0', note: 'C2' },
-  { time: '0:2:0', note: 'C2' },
-  { time: '0:3:0', note: 'C2' },
-]
+const clickSynth = new Tone.NoiseSynth({
+  noise: {
+    type: 'white',
+  },
+  envelope: {
+    attack: 0.01,
+    decay: 0.05,
+    sustain: 0.0,
+    release: 0.0125,
+  },
+  volume: -24,
+}).toDestination()
 
-const metronome = new Tone.AMSynth().toDestination()
+const snareSynth = new Tone.NoiseSynth({
+  noise: {
+    type: 'white',
+  },
+  envelope: {
+    attack: 0.001,
+    decay: 0.2,
+    sustain: 0.0,
+    release: 0.2,
+  },
+  volume: -10,
+}).toDestination()
 
-// metronome.volume.value = 1
+const reverb = new Tone.Reverb({
+  decay: 1,
+}).toDestination()
+snareSynth.connect(reverb)
 
-const metronomePart = new Tone.Part((time, value) => {
-  metronome.triggerAttackRelease('C2', '32n')
-}, metronomeBeats)
+const metronomePart = new Tone.Part(
+  (time) => {
+    clickSynth.triggerAttackRelease('32n', time)
+  },
+  ['0:0:0']
+)
 
 metronomePart.loop = true
-metronomePart.loopEnd = '1:0:0'
+metronomePart.loopEnd = '0:1:0'
 
 interface Props extends GroupProps {}
 
 export function BeatGame({ ...props }: Props) {
-  const synth = React.useMemo(() => new Tone.MembraneSynth().toDestination(), [])
-  const crusher = React.useMemo(() => new Tone.BitCrusher(4).toDestination(), [])
+  const crusher = React.useMemo(() => new Tone.BitCrusher(3.5).toDestination(), [])
+
+  const relapse = React.useRef(0)
 
   const {
     size: { width, height },
@@ -53,14 +77,12 @@ export function BeatGame({ ...props }: Props) {
   const part = React.useMemo(() => {
     const part = new Tone.Part((time, value) => {
       const now = part.progress * Tone.Time(part.loopEnd).toSeconds()
-      console.log(now)
       Tone.Draw.schedule(function () {
         const i = beats.indexOf(value)
         setDrawBeats(beats.slice(i, i + 3).map((beat, j) => ({ ...beat, index: i + j })))
       }, time)
 
       if (value.blank) return
-      synth.triggerAttackRelease(value.note, '8n', time)
     }, beats)
 
     part.loop = true
@@ -82,28 +104,32 @@ export function BeatGame({ ...props }: Props) {
   const shoot = React.useCallback(
     (ev: KeyboardEvent) => {
       if (ev.key !== ' ') return
+      if (Date.now() - relapse.current < 500) return
       const now = part.progress * Tone.Time(part.loopEnd).toSeconds()
       const nearestBeatDelta = beats.reduce((acc, x) => {
         const time = Tone.Time(x.time).toSeconds()
         return Math.min(acc, Math.abs(time - now))
       }, 1)
       const value: 0 | 1 | 2 =
-        nearestBeatDelta < 0.05 ? 2 : nearestBeatDelta < 0.15 ? 1 : 0
-      // console.log(nearestBeatDelta, now)
+        nearestBeatDelta < 0.1 ? 2 : nearestBeatDelta < 0.25 ? 1 : 0
       if (value === 2) {
-        synth.detune.value = 0
+        relapse.current = Date.now()
+        snareSynth.volume.value = -5
         try {
-          synth.disconnect(crusher)
+          snareSynth.disconnect(crusher)
         } catch {}
       } else if (value === 1) {
-        synth.detune.value = 15
+        relapse.current = Date.now()
+        snareSynth.volume.value = -10
         try {
-          synth.disconnect(crusher)
+          snareSynth.disconnect(crusher)
         } catch {}
       } else {
-        synth.detune.value = 150
-        synth.connect(crusher)
+        relapse.current = Date.now() + 1000
+        snareSynth.volume.value = -20
+        snareSynth.connect(crusher)
       }
+      snareSynth.triggerAttackRelease('16n', Tone.now())
       addShot([Date.now(), value])
     },
     [drawBeats]
