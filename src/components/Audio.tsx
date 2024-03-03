@@ -11,19 +11,19 @@ export default function AudioPlayer() {
   const { bpm } = useGameStore(({ toneCursor, bpm }) => ({ toneCursor, bpm }))
 
   React.useEffect(() => {
-    const loopA = new Tone.Loop((time) => {
-      const { toneCursor, setCurrTone, currTone } = useGameStore.getState()
-      const tone = tones[toneCursor - 1]
-      setCurrTone(tone)
-      if (currTone === tone) return
-      synthA.triggerRelease()
-      synthA.triggerAttack(tone)
-    }, '4n').start(0)
+    // const loopA = new Tone.Loop((time) => {
+    //   const { toneCursor, setCurrTone, currTone } = useGameStore.getState()
+    //   const tone = tones[toneCursor - 1]
+    //   setCurrTone(tone)
+    //   if (currTone === tone) return
+    //   synthA.triggerRelease()
+    //   synthA.triggerAttack(tone)
+    // }, '4n').start(0)
 
     Tone.Transport.start()
 
     return () => {
-      loopA.stop()
+      // loopA.stop()
       Tone.Transport.stop()
     }
   }, [bpm])

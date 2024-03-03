@@ -19,50 +19,73 @@ export interface Props extends GroupProps {}
  * -
  */
 
+const beats = [
+  { time: '0:0:0', note: 'C3', cursor: 0 + 1 },
+  { time: '0:1:0', note: 'C3', cursor: 0 + 1 },
+  { time: '0:2:0', note: 'C3', cursor: 0 + 1 },
+  { time: '0:3:0', note: 'C3', cursor: 0 + 1 },
+  { time: '1:0:0', note: 'G3', cursor: 1 + 1 },
+  { time: '1:1:0', note: 'G3', cursor: 1 + 1 },
+  { time: '1:2:0', note: 'G3', cursor: 1 + 1 },
+  { time: '1:3:0', note: 'G3', cursor: 1 + 1 },
+  { time: '2:0:0', note: 'D4', cursor: 2 + 1 },
+  { time: '2:1:0', note: 'D4', cursor: 2 + 1 },
+  { time: '2:2:0', note: 'D4', cursor: 2 + 1 },
+  { time: '2:3:0', note: 'D4', cursor: 2 + 1 },
+]
+
 export default function ToneGame({ ...props }: Props) {
-  const {
-    bpm,
-    moveCursorUp,
-    moveCursorDown,
-    toneCursorNormalized,
-    toneGranularity,
-    toneCursor,
-  } = useGameStore()
+  const { bpm, moveCursorUp, moveCursorDown, toneCursorNormalized, toneGranularity } =
+    useGameStore()
   const { width, height } = useDimensions()
 
-  const [targetBeats, setTargetBeats] = React.useState<number[]>([1, 2, 3, 2, 1])
-  const nextBeat = React.useRef<number>(0)
-
   const cursorHeight = height(144 * 0.75) / toneGranularity
+  const [drawBeats, setDrawBeats] = React.useState<
+    { time: string; note: string; cursor: number; index: number }[]
+  >([])
+
+  const part = React.useMemo(() => {
+    const synth = new Tone.Synth().toDestination()
+    return new Tone.Part((time, value) => {
+      Tone.Draw.schedule(function () {
+        // console.log(part.progress * Tone.Time(part.loopEnd).toSeconds())
+        const i = beats.indexOf(value)
+        setDrawBeats(beats.slice(i, i + 6).map((beat, j) => ({ ...beat, index: i + j })))
+      }, time)
+
+      // the value is an object which contains both the note and the velocity
+      synth.triggerAttackRelease(value.note, '8n', time)
+    }, beats)
+  }, [beats])
 
   React.useEffect(() => {
+    Tone.Transport.start()
+
     function bind(ev: WheelEvent) {
       if (ev.deltaY > 0) moveCursorUp()
       if (ev.deltaY < 0) moveCursorDown()
     }
 
-    const beatSpawner = new Tone.Loop((time) => {
-      const { toneGranularity } = useGameStore.getState()
-      const update = [...targetBeats]
-      update.shift()
-      update.push(Math.ceil(Math.random() * toneGranularity))
-      setTargetBeats(update)
-      // Translate
-      nextBeat.current = Tone.now() + 60 / bpm / 4
-    }, '1n').start(0)
+    part.start(0)
+
+    part.loop = true
+    part.loopStart = 0
+    part.loopEnd = '3:0:0'
 
     window.addEventListener('wheel', bind)
     return () => {
       window.removeEventListener('wheel', bind)
-      beatSpawner.stop()
+      part.stop().dispose()
+      Tone.Transport.stop()
     }
-  }, [targetBeats])
+  }, [])
 
   const cursor = React.useRef<THREE.Mesh>(null)
 
-  const targetBeatRefs = React.useRef<THREE.Mesh[]>([])
+  const targetBeatRefs = React.useRef<{ [key: number]: THREE.Mesh }>({})
+  const lastLog = React.useRef(0)
 
-  useFrame(() => {
+  useFrame(({ clock: { elapsedTime } }, dt) => {
     if (!cursor.current) return
     cursor.current.position.lerp(
       {
@@ -74,28 +97,48 @@ export default function ToneGame({ ...props }: Props) {
       0.1
     )
 
-    // Position target beat meshes on x axis
-    // TODO: Refactor this to push a new mesh that animates all the way across
     if (!targetBeatRefs.current) return
-    const now = Tone.now()
+    for (const i in targetBeatRefs.current) {
+      if (!drawBeats.find(({ index }) => index === Number(i))) {
+        delete targetBeatRefs.current[i]
+      }
+    }
+    const now = part.progress * Tone.Time(part.loopEnd).toSeconds()
     let i = 0
-    for (const mesh of targetBeatRefs.current) {
-      // mesh.position.lerp(
-      //   {
-      //     ...mesh.position,
-      //     x:
-      //       (width(256 * 0.34) / 5) * i -
-      //       width(256 * 0.34) / 2 +
-      //       width(256 * 0.34) / 5 / 2 +
-      //       width(((nextBeat.current - now) * 1000) / bpm),
-      //   },
-      //   0.1
-      // )
-      mesh.position.x =
-        (width(256 * 0.34) / 5) * i -
-        width(256 * 0.34) / 2 +
-        width(256 * 0.34) / 5 / 2 +
-        width(((nextBeat.current - now) * 1000) / bpm)
+    for (const [key, mesh] of Object.entries(targetBeatRefs.current)) {
+      const beatIndex = Number(key)
+      const beat = drawBeats.find(({ index }) => index === beatIndex)
+      if (!beat) continue
+
+      const beatTime = Tone.Time(beat.time).toSeconds()
+      const delta = beatTime - now
+      const deltaMax = Tone.Time('4n').toSeconds() * 4
+      const deltaNormalized = delta / deltaMax
+      if (beatIndex === 5 || beatIndex === 10) {
+        if (elapsedTime - lastLog.current > 0.5) {
+          lastLog.current = elapsedTime
+          console.log(deltaNormalized)
+        }
+      }
+
+      const posLeft =
+        (width(256 * 0.34) / 5) * 0 - width(256 * 0.34) / 2 + width(256 * 0.34) / 5 / 2
+      const posRight =
+        (width(256 * 0.34) / 5) * 4 - width(256 * 0.34) / 2 + width(256 * 0.34) / 5 / 2
+
+      // if (deltaNormalized < 0) {
+      //   mesh.position.x = posLeft
+      //   continue
+      // }
+
+      // if (deltaNormalized > 1) {
+      //   mesh.position.x = posRight
+      //   continue
+      // }
+
+      // Interpolated
+      mesh.position.x = THREE.MathUtils.lerp(posLeft, posRight, deltaNormalized)
+
       i++
     }
   })
@@ -113,30 +156,36 @@ export default function ToneGame({ ...props }: Props) {
         <planeGeometry args={[width(40), height(144 * 0.75)]} />
         <meshBasicMaterial color='#021912' toneMapped={false} />
       </mesh>
+      <mesh position={[width(256 * 0.34) / 2 + width(40 / 2), 0, 1]}>
+        <planeGeometry args={[width(40), height(144 * 0.75)]} />
+        <meshBasicMaterial color='#021912' toneMapped={false} />
+      </mesh>
       {/* Cursor column */}
       <mesh position={[-width((256 * 0.34) / 2 - 5 - 10), 0, 0]}>
         <planeGeometry args={[width(10), height(144 * 0.75)]} />
         <meshBasicMaterial color='#191919' toneMapped={false} />
       </mesh>
       {/* Cursor */}
-      <mesh position={[-width((256 * 0.34) / 2 - 5 - 10), 0, 1]} ref={cursor}>
-        <planeGeometry args={[width(10), cursorHeight]} />
+      <mesh
+        position={[-width(256 * 0.34) / 2 + width(256 * 0.34) / 5 / 2, 0, 1]}
+        ref={cursor}
+      >
+        <planeGeometry args={[width(256 * 0.34) / 5, cursorHeight]} />
         <meshBasicMaterial color='#777' toneMapped={false} />
       </mesh>
       {/* Target beats */}
-      {targetBeats.map((tone, i) => (
+      {drawBeats.map(({ cursor, index }, j) => (
         <mesh
           ref={(el) => {
-            if (el) targetBeatRefs.current[i] = el
+            if (el) targetBeatRefs.current[index] = el
           }}
-          key={`beat-${i}`}
+          key={`beat-${index}`}
           position={[
-            (width(256 * 0.34) / 5) * i -
+            (width(256 * 0.34) / 5) * j -
               width(256 * 0.34) / 2 +
-              width(256 * 0.34) / 5 / 2 +
-              (((nextBeat.current - Tone.now()) * 1000) / bpm) * 4,
-            normalizeTone(tone, toneGranularity) * height(144 * 0.75) -
-              normalizeTone(tone, toneGranularity) *
+              width(256 * 0.34) / 5 / 2,
+            normalizeTone(cursor, toneGranularity) * height(144 * 0.75) -
+              normalizeTone(cursor, toneGranularity) *
                 height((144 * 0.75) / toneGranularity),
             0,
           ]}
