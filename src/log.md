@@ -72,3 +72,6 @@ Scoring
 - [ ] Add scoring system accounting for beat, tone, and horde mechanics
 
 How to coordinate audio as game scales 🤔
+
+- [ ] Create timing grades for tone game
+- [ ] Create basic

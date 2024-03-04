@@ -5,11 +5,13 @@ import ReactDOM from 'react-dom/client'
 import './styles/main.css'
 import { OrthographicCamera } from '@react-three/drei'
 import { Perf } from 'r3f-perf'
-import BeatTutorialLevel from './components/BeatTutorialLevel'
+import BeatTutorialLevel from './components/LevelOne'
 import ToneGame from './components/ToneGame'
 import FullGame from './components/FullGame'
 import TitleScreen from './components/TitleScreen'
 import { BeatGame } from './components/BeatGame'
+import LevelOne from './levels/one'
+import FirstLevel from './components/LevelOne'
 
 function Main() {
   const { performance } = useControls(
@@ -49,7 +51,7 @@ function Main() {
             args={[-1, 1, 1, -1, 0.1, 2000]}
             position={[0, 0, 100]}
           />
-          <FullGame />
+          <FirstLevel />
         </Canvas>
       )}
     </div>

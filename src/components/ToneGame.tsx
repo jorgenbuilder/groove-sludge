@@ -20,18 +20,35 @@ export interface Props extends GroupProps {}
  */
 
 const beats = [
-  { time: '0:0:0', note: 'C3', cursor: 0 + 1 },
-  { time: '0:1:0', note: 'C3', cursor: 0 + 1 },
-  { time: '0:2:0', note: 'C3', cursor: 0 + 1 },
-  { time: '0:3:0', note: 'C3', cursor: 0 + 1 },
-  { time: '1:0:0', note: 'G3', cursor: 1 + 1 },
-  { time: '1:1:0', note: 'G3', cursor: 1 + 1 },
-  { time: '1:2:0', note: 'G3', cursor: 1 + 1 },
-  { time: '1:3:0', note: 'G3', cursor: 1 + 1 },
-  { time: '2:0:0', note: 'D4', cursor: 2 + 1 },
-  { time: '2:1:0', note: 'D4', cursor: 2 + 1 },
-  { time: '2:2:0', note: 'D4', cursor: 2 + 1 },
-  { time: '2:3:0', note: 'D4', cursor: 2 + 1 },
+  { time: '0:0:0', note: 'C3', cursor: 0 + 1, blank: true },
+  { time: '1:0:0', note: 'C3', cursor: 0 + 1 },
+  { time: '1:1:0', note: 'C3', cursor: 0 + 1 },
+  { time: '1:2:0', note: 'C3', cursor: 0 + 1 },
+  { time: '1:3:0', note: 'C3', cursor: 0 + 1 },
+  { time: '2:0:0', note: 'G3', cursor: 1 + 1 },
+  { time: '2:1:0', note: 'G3', cursor: 1 + 1 },
+  { time: '2:2:0', note: 'G3', cursor: 1 + 1 },
+  { time: '2:3:0', note: 'G3', cursor: 1 + 1 },
+  { time: '3:0:0', note: 'D4', cursor: 2 + 1 },
+  { time: '3:1:0', note: 'D4', cursor: 2 + 1 },
+  { time: '3:2:0', note: 'D4', cursor: 2 + 1 },
+  { time: '3:3:0', note: 'D4', cursor: 2 + 1 },
+  { time: '4:0:0', note: 'C3', cursor: 0 + 1 },
+  { time: '4:1:0', note: 'C3', cursor: 0 + 1 },
+  { time: '4:2:0', note: 'C3', cursor: 0 + 1 },
+  { time: '4:3:0', note: 'C3', cursor: 0 + 1 },
+  { time: '5:0:0', note: 'G3', cursor: 1 + 1 },
+  { time: '5:1:0', note: 'G3', cursor: 1 + 1 },
+  { time: '5:2:0', note: 'G3', cursor: 1 + 1 },
+  { time: '5:3:0', note: 'G3', cursor: 1 + 1 },
+  { time: '6:0:0', note: 'D4', cursor: 2 + 1 },
+  { time: '6:1:0', note: 'D4', cursor: 2 + 1 },
+  { time: '6:2:0', note: 'D4', cursor: 2 + 1 },
+  { time: '6:3:0', note: 'D4', cursor: 2 + 1 },
+  { time: '7:0:0', note: 'G4', cursor: 2 + 1 },
+  { time: '7:1:0', note: 'G4', cursor: 2 + 1 },
+  { time: '7:2:0', note: 'G4', cursor: 2 + 1 },
+  { time: '7:3:0', note: 'G4', cursor: 2 + 1 },
 ]
 
 export default function ToneGame({ ...props }: Props) {
@@ -41,7 +58,7 @@ export default function ToneGame({ ...props }: Props) {
 
   const cursorHeight = height(144 * 0.75) / toneGranularity
   const [drawBeats, setDrawBeats] = React.useState<
-    { time: string; note: string; cursor: number; index: number }[]
+    { time: string; note: string; cursor: number; index: number; blank?: boolean }[]
   >([])
 
   const part = React.useMemo(() => {
@@ -52,13 +69,15 @@ export default function ToneGame({ ...props }: Props) {
         setDrawBeats(beats.slice(i, i + 7).map((beat, j) => ({ ...beat, index: i + j })))
       }, time)
 
+      if (value.blank) return
+
       // the value is an object which contains both the note and the velocity
       synth.triggerAttackRelease(value.note, '8n', time)
     }, beats)
 
     part.loop = true
     part.loopStart = 0
-    part.loopEnd = '3:0:0'
+    part.loopEnd = '8:0:0'
 
     return part
   }, [beats])
@@ -181,26 +200,28 @@ export default function ToneGame({ ...props }: Props) {
         <meshBasicMaterial color='#777' toneMapped={false} />
       </mesh>
       {/* Target beats */}
-      {drawBeats.map(({ cursor, index }, j) => (
-        <mesh
-          ref={(el) => {
-            if (el) targetBeatRefs.current[index] = el
-          }}
-          key={`beat-${index}`}
-          position={[
-            (width(256 * 0.34) / 5) * j -
-              width(256 * 0.34) / 2 +
-              width(256 * 0.34) / 5 / 2,
-            normalizeTone(cursor, toneGranularity) * height(144 * 0.75) -
-              normalizeTone(cursor, toneGranularity) *
-                height((144 * 0.75) / toneGranularity),
-            0,
-          ]}
-        >
-          <planeGeometry args={[width(256 * 0.34) / 5, cursorHeight]} />
-          <meshBasicMaterial color={'#333'} toneMapped={false} />
-        </mesh>
-      ))}
+      {drawBeats
+        .filter((x) => !x.blank)
+        .map(({ cursor, index }, j) => (
+          <mesh
+            ref={(el) => {
+              if (el) targetBeatRefs.current[index] = el
+            }}
+            key={`beat-${index}`}
+            position={[
+              (width(256 * 0.34) / 5) * j -
+                width(256 * 0.34) / 2 +
+                width(256 * 0.34) / 5 / 2,
+              normalizeTone(cursor, toneGranularity) * height(144 * 0.75) -
+                normalizeTone(cursor, toneGranularity) *
+                  height((144 * 0.75) / toneGranularity),
+              0,
+            ]}
+          >
+            <planeGeometry args={[width(256 * 0.34) / 5, cursorHeight]} />
+            <meshBasicMaterial color={'#333'} toneMapped={false} />
+          </mesh>
+        ))}
     </group>
   )
 }

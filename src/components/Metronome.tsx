@@ -1,26 +1,31 @@
-import { useFrame } from '@react-three/fiber'
-import { Audio } from 'ts-audio'
-import { useGameStore } from '../store'
-import { isInThreshold } from '../util'
+import * as Tone from 'tone'
 import React from 'react'
+import { clickSynth } from '../instruments'
 
-const click = Audio({ file: '/noise-click.mp3', volume: 0.5 })
+const metronomePart = new Tone.Part(
+  (time) => {
+    clickSynth.triggerAttackRelease('32n', time)
+  },
+  ['0:0:0']
+)
+
+Tone.Transport.on('stop', () => {
+  metronomePart.stop()
+})
+
+Tone.Transport.on('start', () => {
+  metronomePart.start(0)
+})
+
+metronomePart.loop = true
+metronomePart.loopEnd = '0:1:0'
 
 export default function Metronome() {
-  const { beats, bpm } = useGameStore()
-  const playedBeats = React.useRef<number[]>([])
-  const visibleBeats = beats.filter((time) => isInThreshold(time, bpm))
-
-  useFrame(() => {
-    const now = Date.now()
-
-    for (const time of visibleBeats) {
-      if (playedBeats.current?.includes(time)) continue
-      if (time - now > 350) return
-      click.play()
-      playedBeats.current.push(time)
+  React.useEffect(() => {
+    return () => {
+      metronomePart.stop()
     }
-  })
+  }, [])
 
   return null
 }
