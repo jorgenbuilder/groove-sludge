@@ -3,11 +3,12 @@ import * as THREE from 'three'
 import { create } from 'zustand'
 import { normalizeTone } from './util'
 
-const bpm = 130
+const bpm = 106
 Tone.Transport.bpm.value = bpm
 
 interface GameStore {
   bpm: number
+  setBpm: (bpm: number) => void
   shots: [number, 0 | 1 | 2][]
   addShot: (shot: [number, 0 | 1 | 2]) => void
   resetShots: () => void
@@ -24,6 +25,10 @@ const toneGranularity = 3
 
 export const useGameStore = create<GameStore>()((set, get) => ({
   bpm,
+  setBpm: (bpm) => {
+    set({ bpm })
+    Tone.Transport.bpm.value = bpm
+  },
   shots: [],
   addShot: (shot) => {
     set((prev) => ({ shots: [...prev.shots, shot] }))

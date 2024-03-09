@@ -6,23 +6,18 @@ import { useGameStore } from '../store'
 import React from 'react'
 import TimingGrade from './TimingGrade'
 import { isInThreshold, processTexture, useDimensions } from '../util'
-import StLouise from '../levels/one'
-import { Level } from '../levels'
 
 interface Props extends GroupProps {
-  level: Level
+  playBeat: () => void
+  drawBeats: { time: string; index: number; blank?: boolean }[]
 }
 
-export function BeatGame({ level, ...props }: Props) {
+export function BeatGame({ drawBeats, playBeat, ...props }: Props) {
   const refactory = React.useRef(0)
 
   const {
     size: { width, height },
   } = useThree()
-
-  const [drawBeats, setDrawBeats] = React.useState<
-    { time: string; index: number; blank?: boolean }[]
-  >([])
 
   const { bpm, shots, addShot } = useGameStore()
 
@@ -48,47 +43,21 @@ export function BeatGame({ level, ...props }: Props) {
         nearestBeatDelta < 0.1 ? 2 : nearestBeatDelta < 0.25 ? 1 : 0
       if (value === 2) {
         refactory.current = Date.now()
-        // level.beatInstrument.volume.value = 0
-        // try {
-        //   level.beatInstrument.disconnect(crusher)
-        // } catch {}
       } else if (value === 1) {
         refactory.current = Date.now()
-        // level.beatInstrument.volume.value = -5
-        // try {
-        //   level.beatInstrument.disconnect(crusher)
-        // } catch {}
       } else {
         refactory.current = Date.now() + 1000
-        // level.beatInstrument.volume.value = -10
-        // level.beatInstrument.connect(crusher)
       }
-      level.playBeat()
+      playBeat()
       addShot([Date.now(), value])
     },
     [drawBeats]
   )
 
   React.useEffect(() => {
-    function handleBeatUpdate(event: Event) {
-      const { detail } = event as CustomEvent<
-        { time: string; index: number; blank?: boolean }[]
-      >
-      setDrawBeats(detail)
-    }
     window.addEventListener('keydown', shoot)
-    level.addEventListener('beatUpdate', handleBeatUpdate)
-
-    return () => {
-      level.removeEventListener('beatUpdate', handleBeatUpdate)
-      window.removeEventListener('keydown', shoot)
-    }
+    return () => window.removeEventListener('keydown', shoot)
   }, [shoot])
-
-  React.useEffect(() => {
-    level.start()
-    return level.stop
-  }, [])
 
   const cursorPos = [-width / 2 + height * 0.25, 0, 0] as const
 

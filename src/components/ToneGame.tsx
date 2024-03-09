@@ -6,81 +6,32 @@ import React from 'react'
 import { useGameStore } from '../store'
 import AudioPlayer from './Audio'
 
-export interface Props extends GroupProps {}
-
-/**
- * Create targets for the tone game.
- *
- * - Make something show up and move across the track
- * - Add target element to tone track for every beat
- * - Determine target tone for each beat (should ultimate come from the sequencer but mock it)
- * - Only play tone if cursor is on the right track
- * - Detune if cursor is off the track
- * -
- */
+export interface Props extends GroupProps {
+  flat: () => void
+  root: () => void
+  sharp: () => void
+  drawTones: { time: string; cursor: number; index: number; blank?: boolean }[]
+}
 
 const beats = [
-  { time: '0:0:0', note: 'C3', cursor: 0 + 1, blank: true },
-  { time: '1:0:0', note: 'C3', cursor: 0 + 1 },
-  { time: '1:1:0', note: 'C3', cursor: 0 + 1 },
-  { time: '1:2:0', note: 'C3', cursor: 0 + 1 },
-  { time: '1:3:0', note: 'C3', cursor: 0 + 1 },
-  { time: '2:0:0', note: 'G3', cursor: 1 + 1 },
-  { time: '2:1:0', note: 'G3', cursor: 1 + 1 },
-  { time: '2:2:0', note: 'G3', cursor: 1 + 1 },
-  { time: '2:3:0', note: 'G3', cursor: 1 + 1 },
-  { time: '3:0:0', note: 'D4', cursor: 2 + 1 },
-  { time: '3:1:0', note: 'D4', cursor: 2 + 1 },
-  { time: '3:2:0', note: 'D4', cursor: 2 + 1 },
-  { time: '3:3:0', note: 'D4', cursor: 2 + 1 },
-  { time: '4:0:0', note: 'C3', cursor: 0 + 1 },
-  { time: '4:1:0', note: 'C3', cursor: 0 + 1 },
-  { time: '4:2:0', note: 'C3', cursor: 0 + 1 },
-  { time: '4:3:0', note: 'C3', cursor: 0 + 1 },
-  { time: '5:0:0', note: 'G3', cursor: 1 + 1 },
-  { time: '5:1:0', note: 'G3', cursor: 1 + 1 },
-  { time: '5:2:0', note: 'G3', cursor: 1 + 1 },
-  { time: '5:3:0', note: 'G3', cursor: 1 + 1 },
-  { time: '6:0:0', note: 'D4', cursor: 2 + 1 },
-  { time: '6:1:0', note: 'D4', cursor: 2 + 1 },
-  { time: '6:2:0', note: 'D4', cursor: 2 + 1 },
-  { time: '6:3:0', note: 'D4', cursor: 2 + 1 },
-  { time: '7:0:0', note: 'G4', cursor: 2 + 1 },
-  { time: '7:1:0', note: 'G4', cursor: 2 + 1 },
-  { time: '7:2:0', note: 'G4', cursor: 2 + 1 },
-  { time: '7:3:0', note: 'G4', cursor: 2 + 1 },
+  { time: '0:0:0', cursor: 2, blank: true },
+  { time: '1:0:0', cursor: 2, blank: true },
+  { time: '2:0:0', cursor: 2, blank: true },
+  { time: '3:0:0', cursor: 2, blank: true },
+  { time: '4:0:0', cursor: 2, blank: true },
+  { time: '5:0:0', cursor: 2, blank: true },
+  { time: '6:0:0', cursor: 1, blank: true },
+  { time: '7:0:0', cursor: 2, blank: true },
+  { time: '8:0:0', cursor: 2, blank: true },
+  { time: '6:0:0', cursor: 1, blank: true },
 ]
 
-export default function ToneGame({ ...props }: Props) {
-  const { bpm, moveCursorUp, moveCursorDown, toneCursorNormalized, toneGranularity } =
+export default function ToneGame({ drawTones, ...props }: Props) {
+  const { moveCursorUp, moveCursorDown, toneCursorNormalized, toneGranularity } =
     useGameStore()
   const { width, height } = useDimensions()
 
   const cursorHeight = height(144 * 0.75) / toneGranularity
-  const [drawBeats, setDrawBeats] = React.useState<
-    { time: string; note: string; cursor: number; index: number; blank?: boolean }[]
-  >([])
-
-  const part = React.useMemo(() => {
-    const synth = new Tone.Synth().toDestination()
-    const part = new Tone.Part((time, value) => {
-      Tone.Draw.schedule(function () {
-        const i = beats.indexOf(value)
-        setDrawBeats(beats.slice(i, i + 7).map((beat, j) => ({ ...beat, index: i + j })))
-      }, time)
-
-      if (value.blank) return
-
-      // the value is an object which contains both the note and the velocity
-      synth.triggerAttackRelease(value.note, '8n', time)
-    }, beats)
-
-    part.loop = true
-    part.loopStart = 0
-    part.loopEnd = '8:0:0'
-
-    return part
-  }, [beats])
 
   React.useEffect(() => {
     Tone.Transport.start()
@@ -95,15 +46,11 @@ export default function ToneGame({ ...props }: Props) {
       if (ev.key === 'ArrowDown') moveCursorUp()
     }
 
-    part.start(0)
-
     window.addEventListener('keydown', bind2)
     window.addEventListener('wheel', bind)
     return () => {
       window.removeEventListener('wheel', bind)
       window.removeEventListener('keydown', bind2)
-      part.stop().dispose()
-      Tone.Transport.stop()
     }
   }, [])
 
@@ -126,15 +73,15 @@ export default function ToneGame({ ...props }: Props) {
 
     if (!targetBeatRefs.current) return
     for (const i in targetBeatRefs.current) {
-      if (!drawBeats.find(({ index }) => index === Number(i))) {
+      if (!drawTones.find(({ index }) => index === Number(i))) {
         delete targetBeatRefs.current[i]
       }
     }
-    const now = part.progress * Tone.Time(part.loopEnd).toSeconds()
+    const now = Tone.now()
     let i = 0
     for (const [key, mesh] of Object.entries(targetBeatRefs.current)) {
       const beatIndex = Number(key)
-      const beat = drawBeats.find(({ index }) => index === beatIndex)
+      const beat = drawTones.find(({ index }) => index === beatIndex)
       if (!beat) continue
 
       const beatTime = Tone.Time(beat.time).toSeconds()
@@ -152,17 +99,6 @@ export default function ToneGame({ ...props }: Props) {
       const posRight =
         (width(256 * 0.34) / 5) * 4 - width(256 * 0.34) / 2 + width(256 * 0.34) / 5 / 2
 
-      // if (deltaNormalized < 0) {
-      //   mesh.position.x = posLeft
-      //   continue
-      // }
-
-      // if (deltaNormalized > 1) {
-      //   mesh.position.x = posRight
-      //   continue
-      // }
-
-      // Interpolated
       mesh.position.x = THREE.MathUtils.lerp(posLeft, posRight, deltaNormalized)
 
       i++
@@ -176,15 +112,6 @@ export default function ToneGame({ ...props }: Props) {
       <mesh>
         <planeGeometry args={[width(256 * 0.34), height(144 * 0.75)]} />
         <meshBasicMaterial color='#191919' toneMapped={false} />
-      </mesh>
-      {/* Cover up */}
-      <mesh position={[-width(256 * 0.34) / 2 - width(40 / 2), 0, 1]}>
-        <planeGeometry args={[width(40), height(144 * 0.75)]} />
-        <meshBasicMaterial color='#021912' toneMapped={false} />
-      </mesh>
-      <mesh position={[width(256 * 0.34) / 2 + width(40 / 2), 0, 1]}>
-        <planeGeometry args={[width(40), height(144 * 0.75)]} />
-        <meshBasicMaterial color='#021912' toneMapped={false} />
       </mesh>
       {/* Cursor column */}
       <mesh position={[-width((256 * 0.34) / 2 - 5 - 10), 0, 0]}>
@@ -200,7 +127,7 @@ export default function ToneGame({ ...props }: Props) {
         <meshBasicMaterial color='#777' toneMapped={false} />
       </mesh>
       {/* Target beats */}
-      {drawBeats
+      {drawTones
         .filter((x) => !x.blank)
         .map(({ cursor, index }, j) => (
           <mesh
