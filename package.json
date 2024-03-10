@@ -22,7 +22,7 @@
     "three": "^0.161.0",
     "tone": "^14.7.77",
     "ts-audio": "^0.7.4",
-    "zustand": "^4.5.1"
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@types/howler": "^2.2.4",
