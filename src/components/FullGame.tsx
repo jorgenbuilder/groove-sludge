@@ -4,6 +4,7 @@ import { BeatGame } from './BeatGame'
 import ToneGame from './ToneGame'
 import React from 'react'
 import { SomedayLevel } from '../levels/someday'
+import HordeGame from './HordeGame'
 
 const level = new SomedayLevel()
 
@@ -62,10 +63,7 @@ export default function FullGame() {
         drawBeats={drawBeats}
         playBeat={level.playBeat}
       />
-      <mesh position={[-dWidth(256 * 0.34) / 2, dHeight(144 * 0.25) / 2, 0.1]}>
-        <planeGeometry args={[dWidth(256 * 0.66), dHeight(144 * 0.75)]} />
-        <meshBasicMaterial color='black' />
-      </mesh>
+      <HordeGame position={[-dWidth(256 * 0.34) / 2, dHeight(144 * 0.25) / 2, 0.1]} />
     </>
   )
 }

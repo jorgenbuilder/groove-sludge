@@ -12,6 +12,8 @@ import TitleScreen from './components/TitleScreen'
 import { BeatGame } from './components/BeatGame'
 import LevelOne from './levels/one'
 import FirstLevel from './components/LevelOne'
+import HordeGame from './components/HordeGame'
+import KeyboardControlSystem from './systems/keyboard-input'
 
 function Main() {
   const { performance } = useControls(
@@ -44,6 +46,7 @@ function Main() {
       {!started && <TitleScreen handlers={{ start: () => setStarted(true) }} />}
       {started && (
         <Canvas>
+          <KeyboardControlSystem />
           {performance && <Perf position='top-left' />}
           <color attach='background' args={['#021912']} />
           <OrthographicCamera
