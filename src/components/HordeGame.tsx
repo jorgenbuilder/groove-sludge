@@ -71,13 +71,25 @@ export const useMonsterStore = create<{
     }
   },
   march(distance) {
-    const destination = usePlayerStore.getState()
-    set({
-      monsterPositions: get().monsterPositions.map(({ x, y, ...rest }) => ({
-        ...rest,
-        x: THREE.MathUtils.lerp(x, destination.x, distance),
-        y: THREE.MathUtils.lerp(y, destination.y, distance),
-      })),
+    const player = usePlayerStore.getState()
+    const destinationPosition = new THREE.Vector3(player.x, player.y, 0)
+    const currentPosition = new THREE.Vector3(0, 0, 0)
+    const direction = new THREE.Vector3(0, 0, 0)
+
+    set(({ monsterPositions }) => {
+      const update = monsterPositions.map(({ x, y, ...rest }) => {
+        currentPosition.x = x
+        currentPosition.y = y
+        direction.subVectors(destinationPosition, currentPosition)
+        return {
+          ...rest,
+          x: x + direction.normalize().x,
+          y: y + direction.normalize().y,
+        }
+      })
+      return {
+        monsterPositions: update,
+      }
     })
   },
 }))
