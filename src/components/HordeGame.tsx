@@ -6,10 +6,12 @@ import { create } from 'zustand'
 import React, { useEffect } from 'react'
 import { useAtom } from 'jotai'
 import { keyboardStateAtom } from '../systems/keyboard-input'
+import { SomedayLevel } from '../levels/someday'
 
 interface Props extends GroupProps {
   stop: () => void
   onHit: () => void
+  level: SomedayLevel
 }
 
 const usePlayerStore = create<{
@@ -67,7 +69,7 @@ function Player({ onHit, ...props }: MeshProps & { onHit: () => void }) {
     for (const monster of monsterPositions) {
       pos2.x = monster.x
       pos2.y = monster.y
-      if (pos1.distanceTo(pos2) < 25) {
+      if (pos1.distanceTo(pos2) < width(7.5)) {
         onHit()
         usePlayerStore.setState(({ hp }) => ({ hp: Math.max(hp - 10 * dt, 0) }))
       }
@@ -82,45 +84,96 @@ function Player({ onHit, ...props }: MeshProps & { onHit: () => void }) {
   )
 }
 
+function randomPerimeterPosition() {
+  const { bounds } = usePlayerStore.getState()
+  const side = Math.floor(Math.random() * 4) // 0 = top; 1 = right; 2 = bottom; 3 = left;
+  let x = 0
+  let y = 0
+  // Left/right side...
+  if (side % 2 === 1) {
+    x = side === 1 ? bounds.x[1] : bounds.x[0]
+    y = THREE.MathUtils.randFloat(bounds.y[0] * 1.25, bounds.y[1] * 1.25)
+  } else {
+    // Top/bottom side...
+    x = THREE.MathUtils.randFloat(bounds.x[0] * 1.25, bounds.x[1] * 1.25)
+    y = side === 1 ? bounds.x[1] : bounds.x[0]
+  }
+  return [x, y, side]
+}
+
 export const useMonsterStore = create<{
-  monsters: { id: number }[]
-  monsterPositions: { id: number; x: number; y: number }[]
+  i: number
+  incrementI: () => number
+  monsters: { id: number; despawn?: boolean }[]
+  monsterPositions: {
+    id: number
+    x: number
+    y: number
+    destinationX: number
+    destinationY: number
+    despawn?: boolean
+  }[]
   spawn: (count: number) => void
   march: (distance: number) => void
 }>()((set, get) => ({
+  i: 0,
+  incrementI: () => {
+    set(({ i }) => ({ i: i + 1 }))
+    return get().i - 1
+  },
   monsters: [],
   monsterPositions: [],
   spawn(count) {
+    const player = usePlayerStore.getState()
     for (let i = 0; i < count; i++) {
-      const id = get().monsters.length
-      const x = Math.random() * 800 - 400
-      const y = Math.random() * 400 - 200
+      const [x, y, side] = randomPerimeterPosition()
+      const destinationX = -x + (side % 2 === 0 ? player.x * 2 : 0)
+      const destinationY = -y + (side % 2 === 1 ? player.y * 2 : 0)
+      const id = get().incrementI()
 
       set({
         monsters: [...get().monsters, { id }],
-        monsterPositions: [...get().monsterPositions, { id, x, y }],
+        monsterPositions: [
+          ...get().monsterPositions,
+          { id, x, y, destinationX, destinationY },
+        ],
       })
     }
   },
   march(distance) {
     const player = usePlayerStore.getState()
-    const destinationPosition = new THREE.Vector3(player.x, player.y, 0)
+    const destinationPosition = new THREE.Vector3(0, 0, 0)
     const currentPosition = new THREE.Vector3(0, 0, 0)
     const direction = new THREE.Vector3(0, 0, 0)
 
-    set(({ monsterPositions }) => {
-      const update = monsterPositions.map(({ x, y, ...rest }) => {
-        currentPosition.x = x
-        currentPosition.y = y
-        direction.subVectors(destinationPosition, currentPosition)
-        return {
-          ...rest,
-          x: x + direction.normalize().x,
-          y: y + direction.normalize().y,
+    set(({ monsterPositions, monsters }) => {
+      const update = monsterPositions.map(
+        ({ x, y, destinationX, destinationY, ...rest }) => {
+          destinationPosition.set(destinationX, destinationY, 0)
+          currentPosition.x = x
+          currentPosition.y = y
+          direction.subVectors(destinationPosition, currentPosition)
+          // console.log(currentPosition.distanceTo(destinationPosition))
+          return {
+            ...rest,
+            x: x + direction.normalize().x,
+            y: y + direction.normalize().y,
+            destinationX,
+            destinationY,
+            despawn: currentPosition.distanceTo(destinationPosition) < 5,
+          }
         }
-      })
+      )
+      const despawn = update.reduce<{ [key: number]: boolean }>(
+        (agg, x) => ({
+          ...agg,
+          [x.id]: !!x.despawn,
+        }),
+        {}
+      )
       return {
         monsterPositions: update,
+        monsters: monsters.map((r) => ({ ...r, despawn: despawn[r.id] })),
       }
     })
   },
@@ -131,18 +184,16 @@ function Monsters({ ...props }: GroupProps) {
     monsters,
     spawn,
   }))
-  React.useEffect(() => {
-    if (monsters.length > 0) return
-    spawn(5)
-  }, [])
   useFrame((_, dt) => {
     useMonsterStore.getState().march(dt)
   })
   return (
     <group {...props}>
-      {monsters.map(({ id }) => (
-        <Monster key={`monster-${id}`} id={id} />
-      ))}
+      {monsters
+        .filter(({ despawn }) => !despawn)
+        .map(({ id }) => (
+          <Monster key={`monster-${id}`} id={id} />
+        ))}
     </group>
   )
 }
@@ -151,15 +202,19 @@ function Monster({ id, ...props }: MeshProps & { id: number }) {
   const ref = React.useRef<THREE.Mesh>(null)
   const { width } = useDimensions()
   const speed = 100
+  const monsters = useMonsterStore(({ monsters }) => monsters)
   useFrame(() => {
     if (!ref.current) return
-    const { x, y } = useMonsterStore.getState().monsterPositions[id]
+    const { monsterPositions } = useMonsterStore.getState()
+    if (!monsterPositions[id]) return
+    const { x, y } = monsterPositions[id]
     ref.current.position.x = x
     ref.current.position.y = y
     if (x > width(256 * 0.64) / 2 || y < -width(144 * 0.75) / 2)
       ref.current.visible = false
     else ref.current.visible = true
   })
+  if (!monsters[id]) return null
   return (
     <mesh ref={ref} position={[0, 0, 5]} {...props}>
       <circleGeometry args={[width(2.5), 25]} />
@@ -168,9 +223,10 @@ function Monster({ id, ...props }: MeshProps & { id: number }) {
   )
 }
 
-export default function ({ onHit, ...props }: Props) {
+export default function ({ onHit, level, ...props }: Props) {
   const { height, width } = useDimensions()
   const { hp, setBounds } = usePlayerStore(({ hp, setBounds }) => ({ hp, setBounds }))
+  const spawn = useMonsterStore(({ spawn }) => spawn)
 
   React.useEffect(() => {
     setBounds({
@@ -178,6 +234,14 @@ export default function ({ onHit, ...props }: Props) {
       y: [height(144 * 0.75 - 5) / -2, height(144 * 0.75 - 5) / 2],
     })
   }, [height, width])
+
+  React.useEffect(() => {
+    function spawnMonster() {
+      spawn(1)
+    }
+    level.addEventListener('spawnMonster', spawnMonster)
+    return () => level.removeEventListener('spawnMonster', spawnMonster)
+  }, [spawn])
 
   useEffect(() => {
     if (hp <= 0) props.stop()

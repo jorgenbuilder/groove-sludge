@@ -80,6 +80,7 @@ export default function FullGame() {
         playBeat={level.playBeat}
       />
       <HordeGame
+        level={level}
         stop={() => {
           level.stop()
           setIsGameOver(true)
