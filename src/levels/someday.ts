@@ -2,35 +2,6 @@ import * as Tone from 'tone'
 import { Time } from 'tone/build/esm/core/type/Units'
 import { useGameStore } from '../store'
 
-const monsterSpawns = [
-  { time: `0:0:0` },
-  { time: `2:0:0` },
-  { time: `4:0:0` },
-  { time: `6:0:0` },
-  { time: `8:0:0` },
-  { time: `10:0:0` },
-  { time: `12:0:0` },
-  { time: `13:0:0` },
-  { time: `14:0:0` },
-  { time: `15:0:0` },
-  { time: `16:0:0` },
-  { time: `17:0:0` },
-  { time: `18:0:0` },
-  { time: `19:0:0` },
-  { time: `20:0:0` },
-  { time: `21:0:0` },
-  { time: `22:0:0` },
-  { time: `23:0:0` },
-  { time: `24:0:0` },
-  { time: `24:1:0` },
-  { time: `24:2:0` },
-  { time: `24:3:0` },
-  { time: `25:0:0` },
-  { time: `25:1:0` },
-  { time: `25:2:0` },
-  { time: `25:3:0` },
-]
-
 const verse = (i: number) => [
   { time: `${i}:0:0`, cursor: 2, blank: false },
   { time: `${i}:1:0`, cursor: 2, blank: false },
@@ -97,13 +68,32 @@ export class SomedayLevel extends EventTarget {
       .flatMap((_, i) => chorus(61 + i * 4)),
     ...bridge(77),
   ]
+  static monsterSpawns: { time: string }[] = [
+    { time: '0:0:0' },
+    { time: '4:0:0' },
+    ...Array(5)
+      .fill(0)
+      .flatMap((_, i) => verse(5 + i * 4)),
+    ...Array(4)
+      .fill(0)
+      .flatMap((_, i) => chorus(25 + i * 4)),
+    ...bridge(41),
+    ...Array(2)
+      .fill(0)
+      .flatMap((_, i) => verse(53 + i * 4)),
+    ...Array(4)
+      .fill(0)
+      .flatMap((_, i) => chorus(61 + i * 4)),
+    ...bridge(77),
+  ]
+
   static beatSound = new Tone.Player('someday-kick-sound.wav').toDestination()
 
   public backingTrack = new Tone.Player('someday-backing.wav').toDestination()
   public rhythmTrack = new Tone.Player('someday-rhythm.wav').toDestination()
   public beatPart
   public tonePart
-  private monsterSpawns
+  private spawnPart
 
   private pitchShift = new Tone.PitchShift(0).toDestination()
   private cheby = new Tone.Chebyshev(100).toDestination()
@@ -159,16 +149,16 @@ export class SomedayLevel extends EventTarget {
       useGameStore.getState().addToneMatch(value.cursor - cursor)
     }, SomedayLevel.toneNotes)
 
-    this.monsterSpawns = new Tone.Part((time, value) => {
+    this.spawnPart = new Tone.Part((time, value) => {
       Tone.Draw.schedule(() => {
         this.dispatchEvent(new CustomEvent('spawnMonster'))
       }, time)
-    }, monsterSpawns)
+    }, SomedayLevel.monsterSpawns)
 
     Tone.Transport.on('stop', () => {
       this.beatPart.stop()
       this.tonePart.stop()
-      this.monsterSpawns.stop()
+      this.spawnPart.stop()
     })
   }
 
@@ -190,7 +180,7 @@ export class SomedayLevel extends EventTarget {
     try {
       this.beatPart.start()
       this.tonePart.start()
-      this.monsterSpawns.start()
+      this.spawnPart.start()
       this.backingTrack.start()
       this.rhythmTrack.start()
     } catch {}
@@ -211,7 +201,7 @@ export class SomedayLevel extends EventTarget {
     try {
       this.beatPart.stop()
       this.tonePart.stop()
-      this.monsterSpawns.stop()
+      this.spawnPart.stop()
       this.backingTrack.stop()
       this.rhythmTrack.stop()
     } catch {}
