@@ -123,7 +123,7 @@ export class SomedayLevel extends EventTarget {
         this.rhythmTrack.disconnect(this.pitchShift)
       } else {
         this.rhythmTrack.connect(this.pitchShift)
-        this.pitchShift.pitch = (value.cursor - cursor) * 0.25
+        this.pitchShift.pitch = (value.cursor - cursor) * 0.5
       }
       useGameStore.getState().addToneMatch(value.cursor - cursor)
     }, SomedayLevel.toneNotes)
@@ -161,7 +161,6 @@ export class SomedayLevel extends EventTarget {
 
   public distort() {
     this.cheby.wet.value = 1
-    this.cheby.wet.linearRampToValueAtTime(0, Tone.now() + 1)
 
     this.backingTrack.connect(this.cheby)
     this.rhythmTrack.connect(this.cheby)

@@ -18,13 +18,24 @@ const usePlayerStore = create<{
   speed: number
   hp: number
   move: (x: number, y: number) => void
+  bounds: { x: [number, number]; y: [number, number] }
+  setBounds: (bounds: { x: [number, number]; y: [number, number] }) => void
 }>()((set, get) => ({
   x: 0,
   y: 0,
   hp: 100,
   speed: 1,
   move(x, y) {
-    set({ x: get().x + x, y: get().y + y })
+    const { bounds } = get()
+
+    set({
+      x: THREE.MathUtils.clamp(get().x + x, bounds.x[0], bounds.x[1]),
+      y: THREE.MathUtils.clamp(get().y + y, bounds.y[0], bounds.y[1]),
+    })
+  },
+  bounds: { x: [0, 0] as const, y: [0, 0] as const },
+  setBounds(bounds) {
+    set({ bounds })
   },
 }))
 
@@ -159,7 +170,14 @@ function Monster({ id, ...props }: MeshProps & { id: number }) {
 
 export default function ({ onHit, ...props }: Props) {
   const { height, width } = useDimensions()
-  const { hp } = usePlayerStore(({ hp }) => ({ hp }))
+  const { hp, setBounds } = usePlayerStore(({ hp, setBounds }) => ({ hp, setBounds }))
+
+  React.useEffect(() => {
+    setBounds({
+      x: [width(256 * 0.66 - 5) / -2, width(256 * 0.66 - 5) / 2],
+      y: [height(144 * 0.75 - 5) / -2, height(144 * 0.75 - 5) / 2],
+    })
+  }, [height, width])
 
   useEffect(() => {
     if (hp <= 0) props.stop()

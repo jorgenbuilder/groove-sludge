@@ -1,4 +1,5 @@
 import { useThree } from '@react-three/fiber'
+import React from 'react'
 import * as THREE from 'three'
 
 export function useDimensions() {
@@ -8,14 +9,27 @@ export function useDimensions() {
 
   const [fw, fh] = [width / 256, height / 144]
 
-  return {
+  const [d, setD] = React.useState({
     width(w: number) {
       return w * fw
     },
     height(h: number) {
       return h * fh
     },
-  }
+  })
+
+  React.useEffect(() => {
+    setD({
+      width(w: number) {
+        return w * fw
+      },
+      height(h: number) {
+        return h * fh
+      },
+    })
+  }, [width, height])
+
+  return d
 }
 
 export function processTexture(tex: THREE.Texture) {
