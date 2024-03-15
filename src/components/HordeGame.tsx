@@ -1,29 +1,37 @@
 import * as THREE from 'three'
 import * as Tone from 'tone'
-import { GroupProps, MeshProps, useFrame, useThree } from '@react-three/fiber'
+import { GroupProps, MeshProps, useFrame } from '@react-three/fiber'
 import { useDimensions } from '../util'
 import { create } from 'zustand'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useAtom } from 'jotai'
 import { keyboardStateAtom } from '../systems/keyboard-input'
 
-interface Props extends GroupProps {}
+interface Props extends GroupProps {
+  stop: () => void
+  onHit: () => void
+}
 
 const usePlayerStore = create<{
   x: number
   y: number
   speed: number
+  hp: number
   move: (x: number, y: number) => void
 }>()((set, get) => ({
   x: 0,
   y: 0,
+  hp: 100,
   speed: 1,
   move(x, y) {
     set({ x: get().x + x, y: get().y + y })
   },
 }))
 
-function Player({ ...props }: MeshProps) {
+const pos1 = new THREE.Vector2(0, 0)
+const pos2 = pos1.clone()
+
+function Player({ onHit, ...props }: MeshProps & { onHit: () => void }) {
   const [keyboard] = useAtom(keyboardStateAtom)
   const ref = React.useRef<THREE.Mesh>(null)
   const { width } = useDimensions()
@@ -31,6 +39,7 @@ function Player({ ...props }: MeshProps) {
 
   useFrame((_, dt) => {
     const { move } = usePlayerStore.getState()
+    const { monsterPositions } = useMonsterStore.getState()
     let [moveX, moveY] = [0, 0]
     if (keyboard.isDown.w) moveY += 1
     if (keyboard.isDown.s) moveY -= 1
@@ -40,6 +49,18 @@ function Player({ ...props }: MeshProps) {
     if (!ref.current) return
     const { x, y } = usePlayerStore.getState()
     ref.current.position.set(x, y, ref.current.position.z)
+
+    // Remove hp on contact
+    pos1.x = x
+    pos1.y = y
+    for (const monster of monsterPositions) {
+      pos2.x = monster.x
+      pos2.y = monster.y
+      if (pos1.distanceTo(pos2) < 25) {
+        onHit()
+        usePlayerStore.setState(({ hp }) => ({ hp: Math.max(hp - 10 * dt, 0) }))
+      }
+    }
   })
 
   return (
@@ -136,17 +157,32 @@ function Monster({ id, ...props }: MeshProps & { id: number }) {
   )
 }
 
-export default function ({ ...props }: Props) {
+export default function ({ onHit, ...props }: Props) {
   const { height, width } = useDimensions()
+  const { hp } = usePlayerStore(({ hp }) => ({ hp }))
+
+  useEffect(() => {
+    if (hp <= 0) props.stop()
+  }, [hp])
   return (
     <group {...props}>
-      <Player />
+      <Player onHit={onHit} />
       <Monsters />
       {/* Backdrop */}
-      <mesh>
+      <mesh position={[0, 0, 0]}>
         <planeGeometry args={[width(256 * 0.66), height(144 * 0.75)]} />
         <meshBasicMaterial color='black' />
       </mesh>
+      <group position={[-width((256 * 0.64) / 2 - 25), width((144 * 0.75) / 2 - 5), 10]}>
+        <mesh position={[0, 0, 10]}>
+          <planeGeometry args={[width(50), width(5)]} />
+          <meshBasicMaterial color='darkred' />
+        </mesh>
+        <mesh scale={[hp / 100, 1, 1]} position={[0, 0, 10]}>
+          <planeGeometry args={[width(Math.max(0, (50 * hp) / 100)), width(5)]} />
+          <meshBasicMaterial color='white' />
+        </mesh>
+      </group>
     </group>
   )
 }

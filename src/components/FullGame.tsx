@@ -5,6 +5,8 @@ import ToneGame from './ToneGame'
 import React from 'react'
 import { SomedayLevel } from '../levels/someday'
 import HordeGame from './HordeGame'
+import { useGameStore } from '../store'
+import { Html } from '@react-three/drei'
 
 const level = new SomedayLevel()
 
@@ -12,6 +14,18 @@ export default function FullGame() {
   const {
     size: { width, height },
   } = useThree()
+
+  const [isGameOver, setIsGameOver] = React.useState(false)
+  const [isGameWon, setIsGameWon] = React.useState(false)
+
+  React.useEffect(() => {
+    function showScore() {
+      setIsGameWon(true)
+      console.log("You've won!")
+    }
+    level.addEventListener('levelComplete', showScore)
+    return () => level.removeEventListener('levelComplete', showScore)
+  }, [])
 
   const [drawBeats, setDrawBeats] = React.useState<
     { time: string; index: number; blank?: boolean }[]
@@ -49,6 +63,8 @@ export default function FullGame() {
   }, [])
 
   const { height: dHeight, width: dWidth } = useDimensions()
+
+  if (isGameOver) return <Html>Ya dead</Html>
   return (
     <>
       <ToneGame
@@ -63,7 +79,14 @@ export default function FullGame() {
         drawBeats={drawBeats}
         playBeat={level.playBeat}
       />
-      <HordeGame position={[-dWidth(256 * 0.34) / 2, dHeight(144 * 0.25) / 2, 0.1]} />
+      <HordeGame
+        stop={() => {
+          level.stop()
+          setIsGameOver(true)
+        }}
+        onHit={() => level.distort()}
+        position={[-dWidth(256 * 0.34) / 2, dHeight(144 * 0.25) / 2, 0.1]}
+      />
     </>
   )
 }

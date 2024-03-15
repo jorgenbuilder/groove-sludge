@@ -1,5 +1,6 @@
 import * as Tone from 'tone'
 import { Time } from 'tone/build/esm/core/type/Units'
+import { useGameStore } from '../store'
 
 const verse = (i: number) => [
   { time: `${i}:0:0`, cursor: 2, blank: false },
@@ -18,21 +19,16 @@ const verse = (i: number) => [
 
 const chorus = (i: number) => [
   { time: `${i}:0:0`, cursor: 3, blank: false },
-  { time: `${i}:1:0`, cursor: 3, blank: false },
   { time: `${i}:2:0`, cursor: 2, blank: false },
-  { time: `${i}:3:0`, cursor: 2, blank: false },
   { time: `${i + 1}:0:0`, cursor: 1, blank: false },
   { time: `${i + 1}:1:0`, cursor: 1, blank: false },
   { time: `${i + 1}:2:0`, cursor: 1, blank: false },
-  { time: `${i + 1}:3:0`, cursor: 1, blank: false },
   { time: `${i + 2}:0:0`, cursor: 2, blank: false },
   { time: `${i + 2}:1:0`, cursor: 2, blank: false },
   { time: `${i + 2}:2:0`, cursor: 2, blank: false },
-  { time: `${i + 2}:3:0`, cursor: 2, blank: false },
   { time: `${i + 3}:0:0`, cursor: 3, blank: false },
   { time: `${i + 3}:1:0`, cursor: 3, blank: false },
   { time: `${i + 3}:2:0`, cursor: 3, blank: false },
-  { time: `${i + 3}:3:0`, cursor: 3, blank: false },
 ]
 
 const bridge = (i: number) =>
@@ -42,7 +38,6 @@ const bridge = (i: number) =>
       { time: `${i + j}:0:0`, cursor: 2, blank: false },
       { time: `${i + j}:1:0`, cursor: 2, blank: false },
       { time: `${i + j}:2:0`, cursor: 2, blank: false },
-      { time: `${i + j}:3:0`, cursor: 2, blank: false },
     ])
 
 export class SomedayLevel extends EventTarget {
@@ -79,10 +74,11 @@ export class SomedayLevel extends EventTarget {
   public beatPart
   public tonePart
 
+  private pitchShift = new Tone.PitchShift(0).toDestination()
+  private cheby = new Tone.Chebyshev(100).toDestination()
+
   constructor() {
     super()
-
-    console.log(SomedayLevel.toneNotes)
 
     this.beatPart = new Tone.Part((time, value) => {
       Tone.Draw.schedule(() => {
@@ -112,7 +108,6 @@ export class SomedayLevel extends EventTarget {
           index: i + j,
           time: Tone.Time(beat.time).toSeconds() + (this.startTime ?? 0),
         }))
-        console.log(value)
         this.dispatchEvent(
           new CustomEvent<{ time: Time; index: number; blank?: boolean }[]>(
             'toneUpdate',
@@ -123,6 +118,14 @@ export class SomedayLevel extends EventTarget {
         )
       }, time)
       if (value.blank) return
+      const cursor = useGameStore.getState().toneCursor
+      if (value.cursor === cursor) {
+        this.rhythmTrack.disconnect(this.pitchShift)
+      } else {
+        this.rhythmTrack.connect(this.pitchShift)
+        this.pitchShift.pitch = (value.cursor - cursor) * 0.25
+      }
+      useGameStore.getState().addToneMatch(value.cursor - cursor)
     }, SomedayLevel.toneNotes)
 
     Tone.Transport.on('stop', () => {
@@ -156,8 +159,22 @@ export class SomedayLevel extends EventTarget {
     this.scheduleCompletion()
   }
 
+  public distort() {
+    this.cheby.wet.value = 1
+    this.cheby.wet.linearRampToValueAtTime(0, Tone.now() + 1)
+
+    this.backingTrack.connect(this.cheby)
+    this.rhythmTrack.connect(this.cheby)
+  }
+
   public stop() {
     Tone.Transport.stop()
+    try {
+      this.beatPart.stop()
+      this.tonePart.stop()
+      this.backingTrack.stop()
+      this.rhythmTrack.stop()
+    } catch {}
   }
 
   public restart() {

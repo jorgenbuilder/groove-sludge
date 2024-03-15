@@ -11,6 +11,8 @@ interface GameStore {
   setBpm: (bpm: number) => void
   shots: [number, 0 | 1 | 2][]
   addShot: (shot: [number, 0 | 1 | 2]) => void
+  toneMatches: number[]
+  addToneMatch: (tone: number) => void
   resetShots: () => void
   toneGranularity: number
   toneCursor: number
@@ -32,6 +34,10 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   shots: [],
   addShot: (shot) => {
     set((prev) => ({ shots: [...prev.shots, shot] }))
+  },
+  toneMatches: [],
+  addToneMatch: (tone) => {
+    set((prev) => ({ toneMatches: [...prev.toneMatches, tone] }))
   },
   resetShots: () => set({ shots: [] }),
   toneGranularity,

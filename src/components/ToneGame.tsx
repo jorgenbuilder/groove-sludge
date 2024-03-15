@@ -13,19 +13,6 @@ export interface Props extends GroupProps {
   drawTones: { time: string; cursor: number; index: number; blank?: boolean }[]
 }
 
-const beats = [
-  { time: '0:0:0', cursor: 2, blank: true },
-  { time: '1:0:0', cursor: 2, blank: true },
-  { time: '2:0:0', cursor: 2, blank: true },
-  { time: '3:0:0', cursor: 2, blank: true },
-  { time: '4:0:0', cursor: 2, blank: true },
-  { time: '5:0:0', cursor: 2, blank: true },
-  { time: '6:0:0', cursor: 1, blank: true },
-  { time: '7:0:0', cursor: 2, blank: true },
-  { time: '8:0:0', cursor: 2, blank: true },
-  { time: '6:0:0', cursor: 1, blank: true },
-]
-
 export default function ToneGame({ drawTones, ...props }: Props) {
   const { moveCursorUp, moveCursorDown, toneCursorNormalized, toneGranularity } =
     useGameStore()
