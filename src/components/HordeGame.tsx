@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import * as Tone from 'tone'
 import { GroupProps, MeshProps, useFrame } from '@react-three/fiber'
 import { useDimensions } from '../util'
 import { create } from 'zustand'
@@ -48,7 +47,7 @@ function Player({ onHit, ...props }: MeshProps & { onHit: () => void }) {
   const [keyboard] = useAtom(keyboardStateAtom)
   const ref = React.useRef<THREE.Mesh>(null)
   const { width } = useDimensions()
-  const speed = 100
+  const speed = 50
 
   useFrame((_, dt) => {
     const { move } = usePlayerStore.getState()
@@ -58,7 +57,7 @@ function Player({ onHit, ...props }: MeshProps & { onHit: () => void }) {
     if (keyboard.isDown.s) moveY -= 1
     if (keyboard.isDown.a) moveX -= 1
     if (keyboard.isDown.d) moveX += 1
-    move(moveX * dt * speed, moveY * dt * speed)
+    move(width(moveX * dt * speed), width(moveY * dt * speed))
     if (!ref.current) return
     const { x, y } = usePlayerStore.getState()
     ref.current.position.set(x, y, ref.current.position.z)
