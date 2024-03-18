@@ -2,6 +2,7 @@ import { useThree } from '@react-three/fiber'
 import React from 'react'
 import * as THREE from 'three'
 
+// TODO: Refactor to return single function that accepts
 export function useDimensions() {
   const {
     size: { width, height },

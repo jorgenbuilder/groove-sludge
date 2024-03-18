@@ -37,20 +37,21 @@ function Main() {
           },
         }}
       />
-      {!started && <TitleScreen handlers={{ start: () => setStarted(true) }} />}
-      {started && (
-        <Canvas>
-          <KeyboardControlSystem />
-          {performance && <Perf position='top-left' />}
-          <color attach='background' args={['#021912']} />
-          <OrthographicCamera
-            makeDefault
-            args={[-1, 1, 1, -1, 0.1, 2000]}
-            position={[0, 0, 100]}
-          />
+      <Canvas>
+        <KeyboardControlSystem />
+        {performance && <Perf position='top-left' />}
+        <color attach='background' args={['#021912']} />
+        <OrthographicCamera
+          makeDefault
+          args={[-1, 1, 1, -1, 0.1, 2000]}
+          position={[0, 0, 100]}
+        />
+        {started ? (
           <FullGame />
-        </Canvas>
-      )}
+        ) : (
+          <TitleScreen handlers={{ start: () => setStarted(true) }} />
+        )}
+      </Canvas>
     </div>
   )
 }
